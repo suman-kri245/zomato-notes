@@ -69,7 +69,9 @@ async def add_process_time(request, call_next):
 
     process_time = time.time() - start_time
 
-    response.headers["X-Process-Time"] = str(process_time)
+    response.headers["X-Process-Time"] = str(
+        process_time
+    )
 
     return response
 
@@ -84,7 +86,9 @@ SECRET_TOKEN = "zomato-secret-token"
 def verify_token(
     x_token: str = Header(...)
 ):
+
     if x_token != SECRET_TOKEN:
+
         raise HTTPException(
             status_code=401,
             detail="Invalid Token"
@@ -117,7 +121,10 @@ def create_user(
     db: Session = Depends(get_db)
 ):
 
-    return crud.create_user(db, user)
+    return crud.create_user(
+        db,
+        user
+    )
 
 
 # ============================================================
@@ -140,12 +147,15 @@ def create_note(
     )
 
     if db_note is None:
+
         raise HTTPException(
             status_code=404,
             detail="Owner not found"
         )
 
-    background_tasks.add_task(index_note)
+    background_tasks.add_task(
+        index_note
+    )
 
     return db_note
 
@@ -223,10 +233,13 @@ def search_notes(
             )
 
             if created_at:
+
                 note["created_at_epoch"] = (
                     created_at.timestamp()
                 )
+
             else:
+
                 note["created_at_epoch"] = 0
 
         return algorithms.insertion_sort_by_key(
@@ -248,7 +261,9 @@ def lookup_notes(
     db: Session = Depends(get_db)
 ):
 
-    notes = crud.get_notes_for_search(db)
+    # IMPORTANT:
+    # Database returns titles alphabetically sorted
+    notes = crud.get_notes_for_title_lookup(db)
 
     if not notes:
 
@@ -264,34 +279,10 @@ def lookup_notes(
     titles = []
 
     for note in notes:
+
         titles.append(
             note["title"]
         )
-
-    # --------------------------------------------------------
-    # MANUAL ALPHABETICAL INSERTION SORT
-    # --------------------------------------------------------
-
-    for i in range(
-        1,
-        len(titles)
-    ):
-
-        current = titles[i]
-
-        j = i - 1
-
-        while (
-            j >= 0
-            and titles[j].lower()
-            > current.lower()
-        ):
-
-            titles[j + 1] = titles[j]
-
-            j -= 1
-
-        titles[j + 1] = current
 
     # --------------------------------------------------------
     # SELECT SEARCH ALGORITHM
@@ -306,11 +297,18 @@ def lookup_notes(
             len(titles) - 1
         )
 
-    else:
+    elif algo == "iterative":
 
         index = algorithms.binary_search_iterative(
             titles,
             title
+        )
+
+    else:
+
+        raise HTTPException(
+            status_code=400,
+            detail="algo must be iterative or recursive"
         )
 
     # --------------------------------------------------------
@@ -325,24 +323,10 @@ def lookup_notes(
         )
 
     # --------------------------------------------------------
-    # RETURN NOTE
+    # RETURN MATCHED NOTE
     # --------------------------------------------------------
 
-    matched_title = titles[index].lower()
-
-    for note in notes:
-
-        if (
-            note["title"].lower()
-            == matched_title
-        ):
-
-            return note
-
-    raise HTTPException(
-        status_code=404,
-        detail="Note not found"
-    )
+    return notes[index]
 
 
 # ============================================================
@@ -395,7 +379,8 @@ def smart_search(
 # GET SINGLE NOTE
 #
 # IMPORTANT:
-# THIS ROUTE IS AFTER /notes/search
+# THIS ROUTE IS AFTER:
+# /notes/search
 # /notes/lookup
 # /notes/quick-find
 # /notes/smart-search
