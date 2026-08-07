@@ -1,22 +1,33 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, Field, field_validator
+
+from pydantic import (
+    BaseModel,
+    EmailStr,
+    Field,
+    field_validator,
+)
 
 
-# ==========================
-# User Schemas
-# ==========================
+# ============================================================
+# USER SCHEMAS
+# ============================================================
 
 class UserCreate(BaseModel):
     name: str
     email: EmailStr
-    password: str = Field(min_length=8)
+    password: str = Field(
+        min_length=8
+    )
 
     @field_validator("name")
     @classmethod
     def validate_name(cls, value: str):
         if not value.strip():
-            raise ValueError("Name cannot be empty or whitespace.")
-        return value
+            raise ValueError(
+                "Name cannot be empty or whitespace."
+            )
+
+        return value.strip()
 
 
 class UserResponse(BaseModel):
@@ -30,14 +41,22 @@ class UserResponse(BaseModel):
     }
 
 
-# ==========================
-# Note Schemas
-# ==========================
+# ============================================================
+# NOTE SCHEMAS
+# ============================================================
 
 class NoteCreate(BaseModel):
-    title: str = Field(min_length=1, max_length=120)
-    content: str = Field(min_length=1)
-    tag: str
+    title: str = Field(
+        min_length=1,
+        max_length=120,
+    )
+
+    content: str = Field(
+        min_length=1,
+    )
+
+    tag: str | None = None
+
     owner_id: int
 
 
@@ -52,5 +71,3 @@ class NoteResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
-
-
