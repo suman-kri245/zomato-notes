@@ -6,11 +6,12 @@ import schemas
 import ai_service
 
 
-# =========================
+# ============================================================
 # USER FUNCTIONS
-# =========================
+# ============================================================
 
 def create_user(db: Session, user: schemas.UserCreate):
+
     db_user = models.User(
         name=user.name,
         email=user.email,
@@ -24,9 +25,9 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 
-# =========================
+# ============================================================
 # NOTE CREATE
-# =========================
+# ============================================================
 
 def create_note(db: Session, note: schemas.NoteCreate):
 
@@ -59,9 +60,9 @@ def create_note(db: Session, note: schemas.NoteCreate):
     return db_note
 
 
-# =========================
+# ============================================================
 # GET ALL NOTES
-# =========================
+# ============================================================
 
 def get_all_notes(db: Session, tag: str = None):
 
@@ -75,9 +76,9 @@ def get_all_notes(db: Session, tag: str = None):
     return query.all()
 
 
-# =========================
+# ============================================================
 # GET NOTE BY ID
-# =========================
+# ============================================================
 
 def get_note_by_id(db: Session, note_id: int):
 
@@ -88,9 +89,9 @@ def get_note_by_id(db: Session, note_id: int):
     )
 
 
-# =========================
+# ============================================================
 # UPDATE NOTE
-# =========================
+# ============================================================
 
 def update_note(
     db: Session,
@@ -124,9 +125,9 @@ def update_note(
     return db_note
 
 
-# =========================
+# ============================================================
 # DELETE NOTE
-# =========================
+# ============================================================
 
 def delete_note(db: Session, note_id: int):
 
@@ -145,15 +146,16 @@ def delete_note(db: Session, note_id: int):
     return db_note
 
 
-# =========================
+# ============================================================
 # IMPORT NOTES
-# =========================
+# ============================================================
 
 def import_notes(
     db: Session,
     owner_id: int,
     lines: list
 ):
+
     owner = (
         db.query(models.User)
         .filter(models.User.id == owner_id)
@@ -166,12 +168,16 @@ def import_notes(
     notes = []
 
     for line in lines:
+
         line = line.strip()
 
         if not line:
             continue
 
-        parts = [part.strip() for part in line.split("|")]
+        parts = [
+            part.strip()
+            for part in line.split("|")
+        ]
 
         title = parts[0]
 
@@ -203,10 +209,9 @@ def import_notes(
     return notes
 
 
-
-# =========================
+# ============================================================
 # REPORT: TAG SUMMARY
-# =========================
+# ============================================================
 
 def get_tag_summary(db: Session):
 
@@ -216,6 +221,7 @@ def get_tag_summary(db: Session):
             COUNT(*) AS count
         FROM notes
         GROUP BY tag
+        HAVING COUNT(*) > 1
         ORDER BY count DESC
     """)
 
@@ -230,9 +236,9 @@ def get_tag_summary(db: Session):
     ]
 
 
-# =========================
+# ============================================================
 # REPORT: LONG NOTES
-# =========================
+# ============================================================
 
 def get_long_notes(db: Session):
 
@@ -244,7 +250,10 @@ def get_long_notes(db: Session):
             tag,
             owner_id
         FROM notes
-        WHERE LENGTH(content) > 200
+        WHERE LENGTH(content) > (
+            SELECT AVG(LENGTH(content))
+            FROM notes
+        )
         ORDER BY LENGTH(content) DESC
     """)
 
@@ -262,9 +271,9 @@ def get_long_notes(db: Session):
     ]
 
 
-# =========================
+# ============================================================
 # REPORT: USER NOTES
-# =========================
+# ============================================================
 
 def get_user_notes_report(db: Session):
 
@@ -292,15 +301,41 @@ def get_user_notes_report(db: Session):
     ]
 
 
-# =========================
+# ============================================================
 # SEARCH DATA
-# =========================
+# ============================================================
 
 def get_notes_for_search(db: Session):
 
     notes = (
         db.query(models.Note)
         .order_by(models.Note.id)
+        .all()
+    )
+
+    return [
+        {
+            "id": note.id,
+            "title": note.title,
+            "content": note.content,
+            "tag": note.tag,
+            "owner_id": note.owner_id
+        }
+        for note in notes
+    ]
+
+
+# ============================================================
+# TITLE LOOKUP DATA
+# IMPORTANT:
+# Database-level alphabetical ordering for Part 2
+# ============================================================
+
+def get_notes_for_title_lookup(db: Session):
+
+    notes = (
+        db.query(models.Note)
+        .order_by(models.Note.title.asc())
         .all()
     )
 
