@@ -76,7 +76,9 @@ Open index.html using Live Server.
 - GET /search/tag
 - GET /search/tag-quick
 - GET /smart-search
+  ## Part 1 Verification
 
+Core App verification was completed using the FastAPI Swagger UI and the browser frontend. The frontend communicates with the live FastAPI backend, and note creation, listing, searching, updating, and deletion were tested through the API.
 ---
 
 ## Author
