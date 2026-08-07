@@ -1,86 +1,171 @@
-# Zomato Notes API
+# Zomato Notes — AI-Augmented Internal Knowledge Base
 
-## Project Overview
-
-Zomato Notes API is a FastAPI-based backend application that allows users to manage notes efficiently. It supports CRUD operations, file import, reports, search algorithms, and AI-assisted note tagging.
-
----
+Zomato Notes is a full-stack internal knowledge-base application built for capturing, searching, ranking, and retrieving engineering notes efficiently.
 
 ## Features
 
-- User Management
-- Notes CRUD
-- File Import (.txt)
-- Reports
-- Search by Tag
-- Quick Search (Binary Search)
-- Smart Search
-- AI-based Note Tagging
-- Background Tasks
-- Token Protected Delete API
+### Part 1 — Core Application
 
----
+* Create notes
+* List notes
+* Get a single note
+* Update notes
+* Delete notes
+* User creation
+* Tag-based note filtering
+* Bulk `.txt` note import
+* Token-protected note deletion
 
-## Tech Stack
+### Part 2 — Ranking Engine
 
-- FastAPI
-- Python
-- SQLAlchemy
-- SQLite
-- Pydantic
-- HTML
-- CSS
-- JavaScript
+* Keyword relevance search
+* Insertion-sort based ranking
+* Date-based ranking
+* Exact title lookup using iterative binary search
+* Exact title lookup using recursive binary search
+* Quick tag search using linear search
 
----
+### Part 3 — AI Smart Search
 
-## Folder Structure
+* Semantic search using Sentence Transformers
+* `all-MiniLM-L6-v2` embeddings
+* Cosine similarity based ranking
+* Top 5 semantic search results
+* AI-powered automatic note tagging using Gemini
+* Optional manual tag during note creation
 
-backend/
-frontend/
-README.md
-requirements.txt
+### Part 4 — Reporting
 
----
+* Tag summary report
+* Long notes report
+* User notes report
 
-## Installation
+### Part 5 — Frontend Integration
 
-```bash
-pip install -r requirements.txt
+* Browser-based dashboard
+* Create and load notes
+* Title search
+* Tag search
+* Quick tag search
+* Semantic Smart Search
+* Search results displayed in the browser
+
+## Technology Stack
+
+### Backend
+
+* Python
+* FastAPI
+* SQLAlchemy
+* Pydantic
+* SQLite
+* Sentence Transformers
+* Scikit-learn
+* Google Gemini
+
+### Frontend
+
+* HTML
+* CSS
+* JavaScript
+
+## Project Structure
+
+```text
+zomato-notes/
+│
+├── backend/
+│   ├── main.py
+│   ├── crud.py
+│   ├── models.py
+│   ├── schemas.py
+│   ├── algorithms.py
+│   ├── semantic_search.py
+│   ├── seed.py
+│   ├── ranking_dataset.py
+│   ├── requirements.txt
+│   └── zomato_notes.db
+│
+├── frontend/
+│   ├── index.html
+│   ├── script.js
+│   ├── style.css
+│   └── mock-data.js
+│
+├── sample_import.txt
+├── .env
+├── .gitignore
+└── README.md
 ```
 
-Run Backend
+## How to Run
 
-```bash
+### 1. Open the project
+
+```powershell
+cd C:\Users\SUNNY\Desktop\zomato-notes
+```
+
+### 2. Activate the virtual environment
+
+```powershell
+.\backend\venv\Scripts\activate
+```
+
+### 3. Start the FastAPI backend
+
+```powershell
+cd backend
 uvicorn main:app --reload
 ```
 
-Run Frontend
+The API will run at:
 
-Open index.html using Live Server.
+```text
+http://127.0.0.1:8000
+```
 
----
+Swagger documentation:
 
-## API Endpoints
+```text
+http://127.0.0.1:8000/docs
+```
 
-- POST /users
-- POST /notes
-- GET /notes
-- GET /notes/{id}
-- PUT /notes/{id}
-- DELETE /notes/{id}
-- POST /notes/import
-- GET /reports/tag-summary
-- GET /reports/long-notes
-- GET /reports/user-notes
-- GET /search/tag
-- GET /search/tag-quick
-- GET /smart-search
-  ## Part 1 Verification
+### 4. Start the frontend
 
-Core App verification was completed using the FastAPI Swagger UI and the browser frontend. The frontend communicates with the live FastAPI backend, and note creation, listing, searching, updating, and deletion were tested through the API.
----
+Open `frontend/index.html` using VS Code Live Server.
+
+The frontend normally runs at:
+
+```text
+http://127.0.0.1:5500
+```
+
+## Environment Variables
+
+Create a `.env` file and configure the required API key:
+
+```text
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+Do not commit real API keys or passwords to GitHub.
+
+## Verification
+
+The project was tested through:
+
+* FastAPI Swagger UI
+* Browser frontend
+* Core note operations
+* Ranking search
+* Binary search
+* Linear search
+* Semantic Smart Search
+* AI auto-tagging
+* Reporting endpoints
+* Frontend-to-backend integration
 
 ## Author
 
-Suman Kumari
+**Suman Kumari**
