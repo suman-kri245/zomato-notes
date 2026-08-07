@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Zomato Notes</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 120px;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: black;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .note {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 8px;
+            background: white;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <div class="container">
+
+        <h1>Zomato Notes</h1>
+
+        <p>
+            AI-Augmented Internal Knowledge Base
+        </p>
+
+
+        <hr>
+
+
+        <!-- CREATE NOTE -->
+
+        <h2>Create Note</h2>
+
+        <input
+            type="text"
+            id="titleInput"
+            placeholder="Enter title"
+        >
+
+        <textarea
+            id="contentInput"
+            placeholder="Enter content"
+        ></textarea>
+
+        <button onclick="createNote()">
+            Create Note
+        </button>
+
+
+        <hr>
+
+
+        <!-- ALL NOTES -->
+
+        <h2>All Notes</h2>
+
+        <button onclick="loadNotes()">
+            Load Notes
+        </button>
+
+        <div id="notesContainer">
+
+            <p>
+                Click Load Notes.
+            </p>
+
+        </div>
+
+
+        <hr>
+
+
+        <!-- SEARCH -->
+
+        <h2>Search Notes</h2>
+
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="Enter title, tag or query"
+        >
+
+
+        <select id="searchType">
+
+            <option value="title">
+                Title Search
+            </option>
+
+            <option value="tag">
+                Tag Search
+            </option>
+
+            <option value="tag-quick">
+                Tag Quick Search
+            </option>
+
+            <option value="smart">
+                Smart Search
+            </option>
+
+        </select>
+
+
+        <button onclick="performSearch()">
+            Search
+        </button>
+
+
+        <div id="searchResults"></div>
+
+
+    </div>
+
+
+    <!-- JAVASCRIPT -->
+
+    <script>
+
+        const API_URL = "http://127.0.0.1:8000";
+
+
+        // =========================
+        // LOAD NOTES
+        // =========================
+
+        async function loadNotes() {
+
+            const container =
+                document.getElementById("notesContainer");
+
+            container.innerHTML =
+                "<p>Loading...</p>";
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        API_URL + "/notes"
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        "HTTP " + response.status
+                    );
+
+                }
+
+
+                const notes =
+                    await response.json();
+
+
+                console.log(
+                    "NOTES:",
+                    notes
+                );
+
+
+                container.innerHTML = "";
+
+
+                if (
+                    !notes ||
+                    notes.length === 0
+                ) {
+
+                    container.innerHTML =
+                        "<p>No notes found.</p>";
+
+                    return;
+
+                }
+
+
+                notes.forEach(
+                    function(note) {
+
+                        const card =
+                            document.createElement("div");
+
+
+                        card.className =
+                            "note";
+
+
+                        card.innerHTML = `
+
+                            <h3>
+                                ${note.title}
+                            </h3>
+
+                            <p>
+                                ${note.content}
+                            </p>
+
+                            <p>
+                                <strong>Tag:</strong>
+                                ${note.tag || "general"}
+                            </p>
+
+                            <p>
+                                <strong>Owner ID:</strong>
+                                ${note.owner_id}
+                            </p>
+
+                            <p>
+                                <strong>Note ID:</strong>
+                                ${note.id}
+                            </p>
+
+                        `;
+
+
+                        container.appendChild(
+                            card
+                        );
+
+                    }
+                );
+
+
+            }
+            catch (error) {
+
+                console.error(
+                    "LOAD ERROR:",
+                    error
+                );
+
+
+                container.innerHTML = `
+
+                    <p>
+                        <strong>
+                            Error loading notes
+                        </strong>
+                    </p>
+
+                    <p>
+                        ${error.message}
+                    </p>
+
+                `;
+
+            }
+
+        }
+
+
+        // =========================
+        // CREATE NOTE
+        // =========================
+
+        async function createNote() {
+
+            const title =
+                document
+                    .getElementById("titleInput")
+                    .value
+                    .trim();
+
+
+            const content =
+                document
+                    .getElementById("contentInput")
+                    .value
+                    .trim();
+
+
+            if (
+                !title ||
+                !content
+            ) {
+
+                alert(
+                    "Please enter title and content."
+                );
+
+                return;
+
+            }
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        API_URL + "/notes",
+                        {
+
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+
+                                title: title,
+
+                                content: content,
+
+                                tag: "",
+
+                                owner_id: 1
+
+                            })
+
+                        }
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        "HTTP " +
+                        response.status
+                    );
+
+                }
+
+
+                alert(
+                    "Note created successfully!"
+                );
+
+
+                document
+                    .getElementById("titleInput")
+                    .value = "";
+
+
+                document
+                    .getElementById("contentInput")
+                    .value = "";
+
+
+                loadNotes();
+
+
+            }
+            catch (error) {
+
+                alert(
+                    "Create failed: " +
+                    error.message
+                );
+
+            }
+
+        }
+
+
+        // =========================
+        // SEARCH
+        // =========================
+
+        async function performSearch() {
+
+            const value =
+                document
+                    .getElementById("searchInput")
+                    .value
+                    .trim();
+
+
+            const type =
+                document
+                    .getElementById("searchType")
+                    .value;
+
+
+            const results =
+                document
+                    .getElementById("searchResults");
+
+
+            if (!value) {
+
+                results.innerHTML =
+                    "<p>Please enter something to search.</p>";
+
+                return;
+
+            }
+
+
+            let url = "";
+
+
+            if (type === "title") {
+
+                url =
+                    API_URL +
+                    "/search/title?title=" +
+                    encodeURIComponent(value);
+
+            }
+
+
+            else if (type === "tag") {
+
+                url =
+                    API_URL +
+                    "/search/tag?tag=" +
+                    encodeURIComponent(value);
+
+            }
+
+
+            else if (type === "tag-quick") {
+
+                url =
+                    API_URL +
+                    "/search/tag-quick?tag=" +
+                    encodeURIComponent(value);
+
+            }
+
+
+            else if (type === "smart") {
+
+                url =
+                    API_URL +
+                    "/smart-search?query=" +
+                    encodeURIComponent(value);
+
+            }
+
+
+            results.innerHTML =
+                "<p>Searching...</p>";
+
+
+            try {
+
+                const response =
+                    await fetch(url);
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        "HTTP " +
+                        response.status
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                console.log(
+                    "SEARCH RESULT:",
+                    data
+                );
+
+
+                results.innerHTML = "";
+
+
+                if (
+                    !data ||
+                    data.length === 0
+                ) {
+
+                    results.innerHTML =
+                        "<p>No results found.</p>";
+
+                    return;
+
+                }
+
+
+                data.forEach(
+                    function(item) {
+
+                        let note = item;
+
+
+                        if (
+                            type === "smart" &&
+                            item.note
+                        ) {
+
+                            note = item.note;
+
+                        }
+
+
+                        const card =
+                            document.createElement("div");
+
+
+                        card.className =
+                            "note";
+
+
+                        card.innerHTML = `
+
+                            <h3>
+                                ${note.title || "No title"}
+                            </h3>
+
+                            <p>
+                                ${note.content || "No content"}
+                            </p>
+
+                            <p>
+                                <strong>Tag:</strong>
+                                ${note.tag || "general"}
+                            </p>
+
+                            <p>
+                                <strong>Owner ID:</strong>
+                                ${note.owner_id || 1}
+                            </p>
+
+                            <p>
+                                <strong>Note ID:</strong>
+                                ${note.id || ""}
+                            </p>
+
+                        `;
+
+
+                        results.appendChild(
+                            card
+                        );
+
+                    }
+                );
+
+
+            }
+            catch (error) {
+
+                console.error(
+                    "SEARCH ERROR:",
+                    error
+                );
+
+
+                results.innerHTML = `
+
+                    <p>
+                        <strong>
+                            Search failed:
+                        </strong>
+
+                        ${error.message}
+                    </p>
+
+                `;
+
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>
