@@ -1,176 +1,506 @@
+
+// =====================================================
+// API URL
+// =====================================================
+
 const API_URL = "http://127.0.0.1:8000";
 
+
+// =====================================================
+// LOAD NOTES
+// =====================================================
+
 async function loadNotes() {
-    const container = document.getElementById("notesContainer");
-    container.innerHTML = "Loading notes...";
+
+    const container =
+        document.getElementById("notesContainer");
+
+    container.innerHTML =
+        "<p>Loading...</p>";
 
     try {
-        const response = await fetch(API_URL + "/notes");
+
+        const response =
+            await fetch(
+                API_URL + "/notes"
+            );
 
         if (!response.ok) {
-            throw new Error("HTTP " + response.status);
+
+            throw new Error(
+                "HTTP " + response.status
+            );
+
         }
 
-        const notes = await response.json();
+        const notes =
+            await response.json();
+
+        console.log(
+            "NOTES:",
+            notes
+        );
 
         container.innerHTML = "";
 
-        if (notes.length === 0) {
-            container.innerHTML = "<p>No notes found.</p>";
+        if (
+            !notes ||
+            notes.length === 0
+        ) {
+
+            container.innerHTML =
+                "<p>No notes found.</p>";
+
             return;
         }
 
-        notes.forEach(function (note) {
-            const div = document.createElement("div");
+        notes.forEach(function(note) {
 
-            div.innerHTML = `
-                <h3>${note.title}</h3>
-                <p>${note.content}</p>
-                <p><strong>Tag:</strong> ${note.tag || "general"}</p>
-                <p><strong>Owner ID:</strong> ${note.owner_id}</p>
-                <p><strong>Note ID:</strong> ${note.id}</p>
-                <hr>
+            const card =
+                document.createElement("div");
+
+            card.className = "note";
+
+            card.innerHTML = `
+
+                <h3>
+                    ${note.title || "No title"}
+                </h3>
+
+                <p>
+                    ${note.content || "No content"}
+                </p>
+
+                <p>
+                    <strong>Tag:</strong>
+                    ${note.tag || "general"}
+                </p>
+
+                <p>
+                    <strong>Owner ID:</strong>
+                    ${note.owner_id || ""}
+                </p>
+
+                <p>
+                    <strong>Note ID:</strong>
+                    ${note.id || ""}
+                </p>
+
+                <p>
+                    <strong>Created:</strong>
+                    ${note.created_at || ""}
+                </p>
+
             `;
 
-            container.appendChild(div);
+            container.appendChild(card);
+
         });
 
-    } catch (error) {
-        console.error(error);
+    }
+    catch (error) {
+
+        console.error(
+            "LOAD ERROR:",
+            error
+        );
+
         container.innerHTML = `
-            <p>Cannot load notes.</p>
-            <p>${error.message}</p>
+
+            <p class="error">
+                <strong>
+                    Error loading notes:
+                </strong>
+
+                ${error.message}
+            </p>
+
         `;
     }
 }
 
 
-async function createNote() {
-    const title = document.getElementById("titleInput").value.trim();
-    const content = document.getElementById("contentInput").value.trim();
+// =====================================================
+// CREATE NOTE
+// =====================================================
 
-    if (!title || !content) {
-        alert("Please enter title and content.");
+async function createNote() {
+
+    const title =
+        document
+            .getElementById("titleInput")
+            .value
+            .trim();
+
+    const content =
+        document
+            .getElementById("contentInput")
+            .value
+            .trim();
+
+    if (
+        !title ||
+        !content
+    ) {
+
+        alert(
+            "Please enter title and content."
+        );
+
         return;
     }
 
     try {
-        const response = await fetch(API_URL + "/notes", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                title: title,
-                content: content,
-                tag: "",
-                owner_id: 1
-            })
-        });
+
+        const response =
+            await fetch(
+                API_URL + "/notes",
+                {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        title: title,
+
+                        content: content,
+
+                        tag: "",
+
+                        owner_id: 1
+
+                    })
+
+                }
+            );
 
         if (!response.ok) {
-            const errorData = await response.json();
+
             throw new Error(
-                errorData.detail || "HTTP " + response.status
+                "HTTP " + response.status
             );
+
         }
 
-        alert("Note created successfully!");
+        const data =
+            await response.json();
 
-        document.getElementById("titleInput").value = "";
-        document.getElementById("contentInput").value = "";
+        console.log(
+            "CREATED NOTE:",
+            data
+        );
 
-        loadNotes();
+        alert(
+            "Note created successfully!"
+        );
 
-    } catch (error) {
-        console.error(error);
-        alert("Create failed: " + error.message);
+        document
+            .getElementById("titleInput")
+            .value = "";
+
+        document
+            .getElementById("contentInput")
+            .value = "";
+
+        await loadNotes();
+
+    }
+    catch (error) {
+
+        console.error(
+            "CREATE ERROR:",
+            error
+        );
+
+        alert(
+            "Create failed: " +
+            error.message
+        );
     }
 }
 
 
+// =====================================================
+// SEARCH NOTES
+// =====================================================
+
 async function performSearch() {
-    const value = document.getElementById("searchInput").value.trim();
-    const type = document.getElementById("searchType").value;
-    const results = document.getElementById("searchResults");
+
+    const value =
+        document
+            .getElementById("searchInput")
+            .value
+            .trim();
+
+    const type =
+        document
+            .getElementById("searchType")
+            .value;
+
+    const results =
+        document
+            .getElementById("searchResults");
 
     if (!value) {
-        results.innerHTML = "Please enter something.";
+
+        results.innerHTML =
+            "<p>Please enter something to search.</p>";
+
         return;
     }
 
-    let url;
+
+    // =================================================
+    // CREATE SEARCH URL
+    // =================================================
+
+    let url = "";
+
+
+    // -------------------------------------------------
+    // TITLE SEARCH
+    // -------------------------------------------------
 
     if (type === "title") {
-        url = API_URL + "/search/title?title=" +
-            encodeURIComponent(value);
 
-    } else if (type === "tag") {
-        url = API_URL + "/search/tag?tag=" +
-            encodeURIComponent(value);
-
-    } else if (type === "tag-quick") {
-        url = API_URL + "/search/tag-quick?tag=" +
-            encodeURIComponent(value);
-
-    } else if (type === "smart") {
-        url = API_URL + "/notes/smart-search?q=" +
+        url =
+            API_URL +
+            "/search/title?title=" +
             encodeURIComponent(value);
     }
 
+
+    // -------------------------------------------------
+    // TAG SEARCH
+    // -------------------------------------------------
+
+    else if (type === "tag") {
+
+        url =
+            API_URL +
+            "/search/tag?tag=" +
+            encodeURIComponent(value);
+    }
+
+
+    // -------------------------------------------------
+    // TAG QUICK SEARCH
+    // -------------------------------------------------
+
+    else if (type === "tag-quick") {
+
+        url =
+            API_URL +
+            "/search/tag-quick?tag=" +
+            encodeURIComponent(value);
+    }
+
+
+    // -------------------------------------------------
+    // SMART SEARCH
+    // -------------------------------------------------
+
+    else if (type === "smart") {
+
+        url =
+            API_URL +
+            "/notes/smart-search?q=" +
+            encodeURIComponent(value);
+    }
+
+
+    console.log(
+        "SEARCH TYPE:",
+        type
+    );
+
+    console.log(
+        "SEARCH URL:",
+        url
+    );
+
+
+    results.innerHTML =
+        "<p>Searching...</p>";
+
+
     try {
-        const response = await fetch(url);
+
+        const response =
+            await fetch(url);
+
 
         if (!response.ok) {
-            throw new Error("HTTP " + response.status);
+
+            throw new Error(
+                "HTTP " +
+                response.status
+            );
         }
 
-        const data = await response.json();
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "SEARCH RESULT:",
+            data
+        );
+
 
         results.innerHTML = "";
 
-        if (!data || data.length === 0) {
-            results.innerHTML = "No results found.";
+
+        // =================================================
+        // NORMALIZE RESPONSE
+        // =================================================
+
+        let items = [];
+
+
+        if (Array.isArray(data)) {
+
+            items = data;
+
+        }
+        else if (data) {
+
+            items = [data];
+
+        }
+
+
+        // =================================================
+        // NO RESULTS
+        // =================================================
+
+        if (
+            items.length === 0
+        ) {
+
+            results.innerHTML =
+                "<p>No results found.</p>";
+
             return;
         }
 
-        data.forEach(function (item) {
-            const note = type === "smart" ? item.note : item;
 
-            const div = document.createElement("div");
+        // =================================================
+        // DISPLAY RESULTS
+        // =================================================
 
-            div.innerHTML = `
-                <h3>${note.title}</h3>
-                <p>${note.content}</p>
+        items.forEach(function(item) {
+
+            const note = item;
+
+
+            const card =
+                document.createElement("div");
+
+
+            card.className =
+                "note";
+
+
+            card.innerHTML = `
+
+                <h3>
+                    ${note.title || "No title"}
+                </h3>
+
+                <p>
+                    ${note.content || "No content"}
+                </p>
+
                 <p>
                     <strong>Tag:</strong>
                     ${note.tag || "general"}
                 </p>
+
                 <p>
                     <strong>Owner ID:</strong>
-                    ${note.owner_id}
+                    ${note.owner_id || ""}
                 </p>
-                ${
-                    type === "smart"
-                        ? `<p>
-                            <strong>Similarity Score:</strong>
-                            ${item.score.toFixed(4)}
-                           </p>`
-                        : ""
-                }
-                <hr>
+
+                <p>
+                    <strong>Note ID:</strong>
+                    ${note.id || ""}
+                </p>
+
+                <p>
+                    <strong>Created:</strong>
+                    ${note.created_at || ""}
+                </p>
+
             `;
 
-            results.appendChild(div);
+
+            // =================================================
+            // SMART SEARCH RELEVANCE SCORE
+            // =================================================
+
+            if (
+                type === "smart" &&
+                note.similarity_score !== undefined
+            ) {
+
+                const score =
+                    document.createElement("p");
+
+
+                score.className =
+                    "score";
+
+
+                score.innerHTML = `
+
+                    <strong>
+                        Relevance Score:
+                    </strong>
+
+                    ${Number(
+                        note.similarity_score
+                    ).toFixed(3)}
+
+                `;
+
+
+                card.appendChild(score);
+            }
+
+
+            results.appendChild(card);
+
         });
 
-    } catch (error) {
-        console.error(error);
-        results.innerHTML = "Search failed: " + error.message;
+    }
+    catch (error) {
+
+        console.error(
+            "SEARCH ERROR:",
+            error
+        );
+
+
+        results.innerHTML = `
+
+            <p class="error">
+
+                <strong>
+                    Search failed:
+                </strong>
+
+                ${error.message}
+
+            </p>
+
+        `;
     }
 }
 
-
-window.onload = function () {
-    loadNotes();
-};

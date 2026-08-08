@@ -1,21 +1,23 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import func, text
 
-import models
-import schemas
-import ai_service
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+
+from backend import models
+from backend import schemas
 
 
 # ============================================================
 # USER FUNCTIONS
 # ============================================================
 
-def create_user(db: Session, user: schemas.UserCreate):
-
+def create_user(
+    db: Session,
+    user: schemas.UserCreate,
+):
     db_user = models.User(
         name=user.name,
         email=user.email,
-        password=user.password
+        password=user.password,
     )
 
     db.add(db_user)
@@ -26,11 +28,14 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 
 # ============================================================
-# NOTE CREATE
+# NOTE FUNCTIONS - CREATE
 # ============================================================
 
-def create_note(db: Session, note: schemas.NoteCreate):
-
+def create_note(
+    db: Session,
+    note: schemas.NoteCreate,
+):
+    # Check owner before creating note
     owner = (
         db.query(models.User)
         .filter(models.User.id == note.owner_id)
@@ -40,17 +45,11 @@ def create_note(db: Session, note: schemas.NoteCreate):
     if owner is None:
         return None
 
-    # AI automatically generates tag
-    ai_tag = ai_service.get_ai_response(
-        note.title,
-        note.content
-    )
-
     db_note = models.Note(
         title=note.title,
         content=note.content,
-        tag=ai_tag,
-        owner_id=note.owner_id
+        tag=note.tag,
+        owner_id=note.owner_id,
     )
 
     db.add(db_note)
@@ -61,11 +60,13 @@ def create_note(db: Session, note: schemas.NoteCreate):
 
 
 # ============================================================
-# GET ALL NOTES
+# NOTE FUNCTIONS - GET ALL
 # ============================================================
 
-def get_all_notes(db: Session, tag: str = None):
-
+def get_all_notes(
+    db: Session,
+    tag: str = None,
+):
     query = db.query(models.Note)
 
     if tag:
@@ -77,11 +78,13 @@ def get_all_notes(db: Session, tag: str = None):
 
 
 # ============================================================
-# GET NOTE BY ID
+# NOTE FUNCTIONS - GET ONE
 # ============================================================
 
-def get_note_by_id(db: Session, note_id: int):
-
+def get_note_by_id(
+    db: Session,
+    note_id: int,
+):
     return (
         db.query(models.Note)
         .filter(models.Note.id == note_id)
@@ -90,15 +93,14 @@ def get_note_by_id(db: Session, note_id: int):
 
 
 # ============================================================
-# UPDATE NOTE
+# NOTE FUNCTIONS - UPDATE
 # ============================================================
 
 def update_note(
     db: Session,
     note_id: int,
-    note: schemas.NoteCreate
+    note: schemas.NoteCreate,
 ):
-
     db_note = (
         db.query(models.Note)
         .filter(models.Note.id == note_id)
@@ -110,14 +112,7 @@ def update_note(
 
     db_note.title = note.title
     db_note.content = note.content
-
-    # Generate new AI tag after update
-    db_note.tag = ai_service.get_ai_response(
-        note.title,
-        note.content
-    )
-
-    db_note.owner_id = note.owner_id
+    db_note.tag = note.tag
 
     db.commit()
     db.refresh(db_note)
@@ -126,11 +121,13 @@ def update_note(
 
 
 # ============================================================
-# DELETE NOTE
+# NOTE FUNCTIONS - DELETE
 # ============================================================
 
-def delete_note(db: Session, note_id: int):
-
+def delete_note(
+    db: Session,
+    note_id: int,
+):
     db_note = (
         db.query(models.Note)
         .filter(models.Note.id == note_id)
@@ -147,15 +144,40 @@ def delete_note(db: Session, note_id: int):
 
 
 # ============================================================
-# IMPORT NOTES
+# SEARCH DATA
+# ============================================================
+
+def get_notes_for_search(
+    db: Session,
+):
+    notes = (
+        db.query(models.Note)
+        .all()
+    )
+
+    return [
+        {
+            "id": note.id,
+            "title": note.title,
+            "content": note.content,
+            "tag": note.tag,
+            "owner_id": note.owner_id,
+            "created_at": note.created_at,
+        }
+        for note in notes
+    ]
+
+
+# ============================================================
+# BULK IMPORT
 # ============================================================
 
 def import_notes(
     db: Session,
     owner_id: int,
-    lines: list
+    lines: list[str],
 ):
-
+    # Validate owner BEFORE creating any note
     owner = (
         db.query(models.User)
         .filter(models.User.id == owner_id)
@@ -168,34 +190,11 @@ def import_notes(
     notes = []
 
     for line in lines:
-
-        line = line.strip()
-
-        if not line:
-            continue
-
-        parts = [
-            part.strip()
-            for part in line.split("|")
-        ]
-
-        title = parts[0]
-
-        if len(parts) >= 2:
-            content = parts[1]
-        else:
-            content = ""
-
-        if len(parts) >= 3 and parts[2]:
-            tag = parts[2]
-        else:
-            tag = "general"
-
         db_note = models.Note(
-            title=title,
-            content=content,
-            tag=tag,
-            owner_id=owner_id
+            title=line[:120],
+            content=line,
+            tag="general",
+            owner_id=owner_id,
         )
 
         db.add(db_note)
@@ -210,52 +209,62 @@ def import_notes(
 
 
 # ============================================================
-# REPORT: TAG SUMMARY
+# REPORT - TAG SUMMARY
+# Raw SQL + GROUP BY + HAVING
 # ============================================================
 
-def get_tag_summary(db: Session):
-
-    query = text("""
+def get_tag_summary(
+    db: Session,
+):
+    query = text(
+        """
         SELECT
             tag,
-            COUNT(*) AS count
+            COUNT(*) AS note_count
         FROM notes
+        WHERE tag IS NOT NULL
         GROUP BY tag
         HAVING COUNT(*) > 1
-        ORDER BY count DESC
-    """)
+        ORDER BY note_count DESC
+        """
+    )
 
     result = db.execute(query)
 
     return [
         {
             "tag": row.tag,
-            "count": row.count
+            "note_count": row.note_count,
         }
         for row in result
     ]
 
 
 # ============================================================
-# REPORT: LONG NOTES
+# REPORT - LONG NOTES
+# Raw SQL + SUBQUERY
 # ============================================================
 
-def get_long_notes(db: Session):
-
-    query = text("""
+def get_long_notes(
+    db: Session,
+):
+    query = text(
+        """
         SELECT
             id,
             title,
             content,
             tag,
-            owner_id
+            owner_id,
+            created_at
         FROM notes
         WHERE LENGTH(content) > (
             SELECT AVG(LENGTH(content))
             FROM notes
         )
-        ORDER BY LENGTH(content) DESC
-    """)
+        ORDER BY id
+        """
+    )
 
     result = db.execute(query)
 
@@ -265,29 +274,38 @@ def get_long_notes(db: Session):
             "title": row.title,
             "content": row.content,
             "tag": row.tag,
-            "owner_id": row.owner_id
+            "owner_id": row.owner_id,
+            "created_at": row.created_at,
         }
         for row in result
     ]
 
 
 # ============================================================
-# REPORT: USER NOTES
+# REPORT - USER NOTES
+# Raw SQL + JOIN
 # ============================================================
 
-def get_user_notes_report(db: Session):
-
-    query = text("""
+def get_user_notes_report(
+    db: Session,
+):
+    query = text(
+        """
         SELECT
             users.id AS user_id,
             users.name AS user_name,
+            users.email AS email,
             COUNT(notes.id) AS note_count
         FROM users
         LEFT JOIN notes
             ON users.id = notes.owner_id
-        GROUP BY users.id, users.name
-        ORDER BY note_count DESC
-    """)
+        GROUP BY
+            users.id,
+            users.name,
+            users.email
+        ORDER BY users.id
+        """
+    )
 
     result = db.execute(query)
 
@@ -295,57 +313,8 @@ def get_user_notes_report(db: Session):
         {
             "user_id": row.user_id,
             "user_name": row.user_name,
-            "note_count": row.note_count
+            "email": row.email,
+            "note_count": row.note_count,
         }
         for row in result
-    ]
-
-
-# ============================================================
-# SEARCH DATA
-# ============================================================
-
-def get_notes_for_search(db: Session):
-
-    notes = (
-        db.query(models.Note)
-        .order_by(models.Note.id)
-        .all()
-    )
-
-    return [
-        {
-            "id": note.id,
-            "title": note.title,
-            "content": note.content,
-            "tag": note.tag,
-            "owner_id": note.owner_id
-        }
-        for note in notes
-    ]
-
-
-# ============================================================
-# TITLE LOOKUP DATA
-# IMPORTANT:
-# Database-level alphabetical ordering for Part 2
-# ============================================================
-
-def get_notes_for_title_lookup(db: Session):
-
-    notes = (
-        db.query(models.Note)
-        .order_by(models.Note.title.asc())
-        .all()
-    )
-
-    return [
-        {
-            "id": note.id,
-            "title": note.title,
-            "content": note.content,
-            "tag": note.tag,
-            "owner_id": note.owner_id
-        }
-        for note in notes
     ]

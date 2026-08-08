@@ -1,26 +1,20 @@
-# ============================================================
-# ZOMATO NOTES - ALGORITHMS
-# ============================================================
-
-
-# ============================================================
-# REQUIRED FUNCTION 1
-# INSERTION SORT BY NUMERIC KEY
-# ============================================================
-
-def insertion_sort_by_key(items: list[dict], key: str) -> list[dict]:
-    """
-    Sort dictionaries in descending order by a numeric key.
-    Manual insertion sort.
-    """
-
-    result = items.copy()
+def insertion_sort(notes):
+    result = notes.copy()
 
     for i in range(1, len(result)):
         current = result[i]
+        current_title = (current.get("title") or "").lower()
+
         j = i - 1
 
-        while j >= 0 and result[j][key] < current[key]:
+        while j >= 0:
+            previous_title = (
+                result[j].get("title") or ""
+            ).lower()
+
+            if previous_title <= current_title:
+                break
+
             result[j + 1] = result[j]
             j -= 1
 
@@ -29,277 +23,189 @@ def insertion_sort_by_key(items: list[dict], key: str) -> list[dict]:
     return result
 
 
-# ============================================================
-# REQUIRED FUNCTION 2
-# ITERATIVE BINARY SEARCH
-# ============================================================
+def insertion_sort_by_key(notes, key):
+    result = notes.copy()
 
-def binary_search_iterative(
-    sorted_titles: list[str],
-    target: str
-) -> int:
-    """
-    Search for an exact title in an alphabetically sorted list.
-    """
+    for i in range(1, len(result)):
+        current = result[i]
+        current_value = current.get(key, 0)
+
+        j = i - 1
+
+        while j >= 0:
+            previous_value = result[j].get(key, 0)
+
+            if previous_value >= current_value:
+                break
+
+            result[j + 1] = result[j]
+            j -= 1
+
+        result[j + 1] = current
+
+    return result
+
+
+def binary_search_iterative(titles, target):
+    target = target.strip().lower()
 
     left = 0
-    right = len(sorted_titles) - 1
-    target = target.lower()
+    right = len(titles) - 1
 
     while left <= right:
+        middle = (left + right) // 2
 
-        mid = left + (right - left) // 2
-        current = sorted_titles[mid].lower()
+        current = (
+            titles[middle] or ""
+        ).strip().lower()
 
         if current == target:
-            return mid
+            return middle
 
-        elif current < target:
-            left = mid + 1
-
+        if current < target:
+            left = middle + 1
         else:
-            right = mid - 1
+            right = middle - 1
 
     return -1
 
 
-# ============================================================
-# REQUIRED FUNCTION 3
-# RECURSIVE BINARY SEARCH
-# ============================================================
-
 def binary_search_recursive(
-    sorted_titles: list[str],
-    target: str,
-    start: int,
-    end: int
-) -> int:
-    """
-    Recursive binary search for an exact title.
-    """
+    titles,
+    target,
+    left,
+    right,
+):
+    target = target.strip().lower()
 
-    if start > end:
+    if left > right:
         return -1
 
-    mid = start + (end - start) // 2
+    middle = (left + right) // 2
 
-    current = sorted_titles[mid].lower()
-    target = target.lower()
+    current = (
+        titles[middle] or ""
+    ).strip().lower()
 
     if current == target:
-        return mid
+        return middle
 
-    elif current < target:
-
+    if current < target:
         return binary_search_recursive(
-            sorted_titles,
+            titles,
             target,
-            mid + 1,
-            end
+            middle + 1,
+            right,
         )
 
-    else:
-
-        return binary_search_recursive(
-            sorted_titles,
-            target,
-            start,
-            mid - 1
-        )
+    return binary_search_recursive(
+        titles,
+        target,
+        left,
+        middle - 1,
+    )
 
 
-# ============================================================
-# REQUIRED FUNCTION 4
-# LINEAR SEARCH
-# ============================================================
+def linear_search(notes, key, value):
+    search_value = str(
+        value or ""
+    ).strip().lower()
 
-def linear_search(
-    items: list[dict],
-    key: str,
-    value
-) -> dict | None:
-    """
-    Sequentially searches for the first matching dictionary.
-    """
+    for note in notes:
+        note_value = note.get(key)
 
-    found = False
-    result = None
+        if note_value is None:
+            continue
 
-    for item in items:
-
-        if item.get(key) == value:
-
-            result = item
-            found = True
-            break
-
-    if found:
-        return result
+        if (
+            str(note_value)
+            .strip()
+            .lower()
+            == search_value
+        ):
+            return note
 
     return None
 
 
-# ============================================================
-# EXISTING FUNCTION
-# INSERTION SORT BY TITLE
-# ============================================================
-
-def insertion_sort(notes):
-    """
-    Sort notes alphabetically by title.
-    """
-
-    sorted_notes = notes.copy()
-
-    for i in range(1, len(sorted_notes)):
-
-        key = sorted_notes[i]
-        j = i - 1
-
-        while (
-            j >= 0
-            and sorted_notes[j]["title"].lower()
-            > key["title"].lower()
-        ):
-
-            sorted_notes[j + 1] = sorted_notes[j]
-            j -= 1
-
-        sorted_notes[j + 1] = key
-
-    return sorted_notes
-
-
-# ============================================================
-# BINARY SEARCH TITLE
-# ============================================================
-
-def binary_search_title(sorted_notes, title):
-    """
-    Finds all notes having the requested title.
-    """
-
-    title = title.lower()
-
-    left = 0
-    right = len(sorted_notes) - 1
-
-    while left <= right:
-
-        mid = (left + right) // 2
-
-        current = sorted_notes[mid]["title"].lower()
-
-        if current == title:
-
-            result = []
-
-            start = mid
-
-            while (
-                start > 0
-                and sorted_notes[start - 1]["title"].lower() == title
-            ):
-                start -= 1
-
-            while start < len(sorted_notes):
-
-                if (
-                    sorted_notes[start]["title"].lower()
-                    != title
-                ):
-                    break
-
-                result.append(sorted_notes[start])
-                start += 1
-
-            return result
-
-        elif current < title:
-
-            left = mid + 1
-
-        else:
-
-            right = mid - 1
-
-    return []
-
-
-# ============================================================
-# BINARY SEARCH TAG
-# ============================================================
-
-def binary_search_tag(sorted_notes, tag):
-    """
-    Finds all notes having the requested tag.
-    """
-
-    tag = tag.lower()
-
-    left = 0
-    right = len(sorted_notes) - 1
-
-    while left <= right:
-
-        mid = (left + right) // 2
-
-        current = sorted_notes[mid]["tag"].lower()
-
-        if current == tag:
-
-            start = mid
-
-            while (
-                start > 0
-                and sorted_notes[start - 1]["tag"].lower()
-                == tag
-            ):
-                start -= 1
-
-            result = []
-
-            while start < len(sorted_notes):
-
-                if (
-                    sorted_notes[start]["tag"].lower()
-                    != tag
-                ):
-                    break
-
-                result.append(sorted_notes[start])
-                start += 1
-
-            return result
-
-        elif current < tag:
-
-            left = mid + 1
-
-        else:
-
-            right = mid - 1
-
-    return []
-
-
-# ============================================================
-# LINEAR SEARCH TAG
-# ============================================================
-
 def linear_search_tag(notes, tag):
-    """
-    Returns all notes matching the tag.
-    """
-
-    tag = tag.lower()
-
-    result = []
+    tag = (
+        tag or ""
+    ).strip().lower()
 
     for note in notes:
+        note_tag = note.get("tag")
 
-        if note["tag"].lower() == tag:
+        if note_tag is None:
+            continue
 
-            result.append(note)
+        note_tag = (
+            str(note_tag)
+            .strip()
+            .lower()
+        )
 
-    return result
+        if note_tag == tag:
+            return note
+
+    return None
+
+
+def binary_search_title(
+    sorted_notes,
+    title,
+):
+    titles = [
+        note.get("title") or ""
+        for note in sorted_notes
+    ]
+
+    index = binary_search_iterative(
+        titles,
+        title,
+    )
+
+    if index == -1:
+        return {
+            "message": "Note not found"
+        }
+
+    return sorted_notes[index]
+
+
+def binary_search_tag(
+    sorted_notes,
+    tag,
+):
+    tag = (
+        tag or ""
+    ).strip().lower()
+
+    left = 0
+    right = len(sorted_notes) - 1
+
+    while left <= right:
+        middle = (left + right) // 2
+
+        middle_tag = (
+            sorted_notes[middle].get("tag")
+            or ""
+        )
+
+        middle_tag = (
+            str(middle_tag)
+            .strip()
+            .lower()
+        )
+
+        if middle_tag == tag:
+            return sorted_notes[middle]
+
+        if middle_tag < tag:
+            left = middle + 1
+        else:
+            right = middle - 1
+
+    return {
+        "message": "No note found for this tag"
+    }

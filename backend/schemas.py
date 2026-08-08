@@ -64,7 +64,7 @@ class NoteResponse(BaseModel):
     id: int
     title: str
     content: str
-    tag: str
+    tag: str | None = None
     owner_id: int
     created_at: datetime
 

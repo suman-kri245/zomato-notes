@@ -1,97 +1,93 @@
-# ============================================================
-# ZOMATO NOTES - SEMANTIC SEARCH
-# ============================================================
 
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
 # ============================================================
-# LOAD SEMANTIC SEARCH MODEL
+# SEMANTIC SEARCH MODEL
 # ============================================================
 
 model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
+    "sentence-transformers/all-MiniLM-L6-v2"
 )
 
 
 # ============================================================
-# CREATE EMBEDDINGS
+# CONVERT NOTE TO TEXT
 # ============================================================
 
-def create_embeddings(
-    notes: list[dict],
-):
-    """
-    Create embeddings from note content.
-    """
+def note_to_text(note):
+    title = str(note.get("title") or "")
+    content = str(note.get("content") or "")
+    tag = str(note.get("tag") or "")
 
-    if not notes:
-        return []
-
-    texts = []
-
-    for note in notes:
-        content = note.get(
-            "content",
-            "",
-        )
-
-        texts.append(content)
-
-    return model.encode(texts)
+    return f"{title} {content} {tag}".strip()
 
 
 # ============================================================
 # SEMANTIC SEARCH
 # ============================================================
 
-def semantic_search(
-    query: str,
-    notes: list[dict],
-):
-    """
-    Search notes using semantic similarity.
-    Returns the top 5 most relevant notes.
-    """
+def semantic_search(query, notes, top_k=5):
 
-    if not query or not query.strip():
+    query = str(query or "").strip()
+
+    if not query:
         return []
 
     if not notes:
         return []
 
-    query = query.strip()
+    note_texts = []
+    valid_notes = []
 
-    note_embeddings = create_embeddings(
-        notes
-    )
+    for note in notes:
+
+        if not isinstance(note, dict):
+            continue
+
+        text = note_to_text(note)
+
+        if not text:
+            continue
+
+        note_texts.append(text)
+        valid_notes.append(note)
+
+    if not valid_notes:
+        return []
 
     query_embedding = model.encode(
-        [query]
+        [query],
+        convert_to_numpy=True
     )
 
-    scores = cosine_similarity(
+    note_embeddings = model.encode(
+        note_texts,
+        convert_to_numpy=True
+    )
+
+    similarities = cosine_similarity(
         query_embedding,
-        note_embeddings,
+        note_embeddings
     )[0]
 
-    ranked = []
+    results = []
 
-    for note, score in zip(
-        notes,
-        scores,
-    ):
-        ranked.append(
-            {
-                "note": note,
-                "score": float(score),
-            }
+    for index, note in enumerate(valid_notes):
+
+        result = note.copy()
+
+        result["similarity_score"] = float(
+            similarities[index]
         )
 
-    ranked.sort(
-        key=lambda item: item["score"],
-        reverse=True,
+        results.append(result)
+
+    results.sort(
+        key=lambda item: item["similarity_score"],
+        reverse=True
     )
 
-    return ranked[:5]
+    return results[:top_k]
+

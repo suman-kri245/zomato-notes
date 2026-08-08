@@ -1,9 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Zomato Notes</title>
 
@@ -47,12 +53,26 @@
             cursor: pointer;
         }
 
+        button:hover {
+            opacity: 0.85;
+        }
+
         .note {
             border: 1px solid #ccc;
             padding: 15px;
             margin-top: 15px;
             border-radius: 8px;
             background: white;
+        }
+
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
         }
 
     </style>
@@ -62,556 +82,708 @@
 
 <body>
 
-    <div class="container">
+<div class="container">
 
-        <h1>Zomato Notes</h1>
+    <h1>Zomato Notes</h1>
+
+    <p>
+        AI-Augmented Internal Knowledge Base
+    </p>
+
+
+    <hr>
+
+
+    <!-- ================================================= -->
+    <!-- CREATE NOTE -->
+    <!-- ================================================= -->
+
+    <h2>Create Note</h2>
+
+    <input
+        type="text"
+        id="titleInput"
+        placeholder="Enter note title"
+    >
+
+    <textarea
+        id="contentInput"
+        placeholder="Enter note content"
+    ></textarea>
+
+    <button onclick="createNote()">
+        Create Note
+    </button>
+
+
+    <hr>
+
+
+    <!-- ================================================= -->
+    <!-- ALL NOTES -->
+    <!-- ================================================= -->
+
+    <h2>All Notes</h2>
+
+    <button onclick="loadNotes()">
+        Load Notes
+    </button>
+
+    <div id="notesContainer">
 
         <p>
-            AI-Augmented Internal Knowledge Base
+            Click "Load Notes" to see notes.
         </p>
-
-
-        <hr>
-
-
-        <!-- CREATE NOTE -->
-
-        <h2>Create Note</h2>
-
-        <input
-            type="text"
-            id="titleInput"
-            placeholder="Enter title"
-        >
-
-        <textarea
-            id="contentInput"
-            placeholder="Enter content"
-        ></textarea>
-
-        <button onclick="createNote()">
-            Create Note
-        </button>
-
-
-        <hr>
-
-
-        <!-- ALL NOTES -->
-
-        <h2>All Notes</h2>
-
-        <button onclick="loadNotes()">
-            Load Notes
-        </button>
-
-        <div id="notesContainer">
-
-            <p>
-                Click Load Notes.
-            </p>
-
-        </div>
-
-
-        <hr>
-
-
-        <!-- SEARCH -->
-
-        <h2>Search Notes</h2>
-
-        <input
-            type="text"
-            id="searchInput"
-            placeholder="Enter title, tag or query"
-        >
-
-
-        <select id="searchType">
-
-            <option value="title">
-                Title Search
-            </option>
-
-            <option value="tag">
-                Tag Search
-            </option>
-
-            <option value="tag-quick">
-                Tag Quick Search
-            </option>
-
-            <option value="smart">
-                Smart Search
-            </option>
-
-        </select>
-
-
-        <button onclick="performSearch()">
-            Search
-        </button>
-
-
-        <div id="searchResults"></div>
-
 
     </div>
 
 
-    <!-- JAVASCRIPT -->
-
-    <script>
-
-        const API_URL = "http://127.0.0.1:8000";
+    <hr>
 
 
-        // =========================
-        // LOAD NOTES
-        // =========================
+    <!-- ================================================= -->
+    <!-- SEARCH NOTES -->
+    <!-- ================================================= -->
 
-        async function loadNotes() {
+    <h2>Search Notes</h2>
 
-            const container =
-                document.getElementById("notesContainer");
-
-            container.innerHTML =
-                "<p>Loading...</p>";
-
-
-            try {
-
-                const response =
-                    await fetch(
-                        API_URL + "/notes"
-                    );
+    <input
+        type="text"
+        id="searchInput"
+        placeholder="Enter title, tag or query"
+    >
 
 
-                if (!response.ok) {
+    <select id="searchType">
 
-                    throw new Error(
-                        "HTTP " + response.status
-                    );
+        <option value="title">
+            Title Search
+        </option>
 
-                }
+        <option value="tag">
+            Tag Search
+        </option>
+
+        <option value="tag-quick">
+            Tag Quick Search
+        </option>
+
+        <option value="smart">
+            Smart Search
+        </option>
+
+    </select>
 
 
-                const notes =
-                    await response.json();
+    <button onclick="performSearch()">
+        Search
+    </button>
 
 
-                console.log(
-                    "NOTES:",
-                    notes
+    <div id="searchResults"></div>
+
+
+</div>
+
+
+<script>
+
+
+    // =====================================================
+    // API URL
+    // =====================================================
+
+    const API_URL =
+        "http://127.0.0.1:8000";
+
+
+    // =====================================================
+    // LOAD NOTES
+    // =====================================================
+
+    async function loadNotes() {
+
+        const container =
+            document.getElementById(
+                "notesContainer"
+            );
+
+        container.innerHTML =
+            "<p>Loading...</p>";
+
+
+        try {
+
+            const response =
+                await fetch(
+                    API_URL + "/notes"
                 );
 
 
-                container.innerHTML = "";
+            if (!response.ok) {
 
-
-                if (
-                    !notes ||
-                    notes.length === 0
-                ) {
-
-                    container.innerHTML =
-                        "<p>No notes found.</p>";
-
-                    return;
-
-                }
-
-
-                notes.forEach(
-                    function(note) {
-
-                        const card =
-                            document.createElement("div");
-
-
-                        card.className =
-                            "note";
-
-
-                        card.innerHTML = `
-
-                            <h3>
-                                ${note.title}
-                            </h3>
-
-                            <p>
-                                ${note.content}
-                            </p>
-
-                            <p>
-                                <strong>Tag:</strong>
-                                ${note.tag || "general"}
-                            </p>
-
-                            <p>
-                                <strong>Owner ID:</strong>
-                                ${note.owner_id}
-                            </p>
-
-                            <p>
-                                <strong>Note ID:</strong>
-                                ${note.id}
-                            </p>
-
-                        `;
-
-
-                        container.appendChild(
-                            card
-                        );
-
-                    }
+                throw new Error(
+                    "HTTP " +
+                    response.status
                 );
-
-
-            }
-            catch (error) {
-
-                console.error(
-                    "LOAD ERROR:",
-                    error
-                );
-
-
-                container.innerHTML = `
-
-                    <p>
-                        <strong>
-                            Error loading notes
-                        </strong>
-                    </p>
-
-                    <p>
-                        ${error.message}
-                    </p>
-
-                `;
 
             }
 
-        }
+
+            const notes =
+                await response.json();
 
 
-        // =========================
-        // CREATE NOTE
-        // =========================
-
-        async function createNote() {
-
-            const title =
-                document
-                    .getElementById("titleInput")
-                    .value
-                    .trim();
+            console.log(
+                "NOTES:",
+                notes
+            );
 
 
-            const content =
-                document
-                    .getElementById("contentInput")
-                    .value
-                    .trim();
+            container.innerHTML = "";
 
 
             if (
-                !title ||
-                !content
+                !notes ||
+                notes.length === 0
             ) {
 
-                alert(
-                    "Please enter title and content."
-                );
+                container.innerHTML =
+                    "<p>No notes found.</p>";
 
                 return;
 
             }
 
 
-            try {
+            notes.forEach(
+                function(note) {
 
-                const response =
-                    await fetch(
-                        API_URL + "/notes",
-                        {
-
-                            method: "POST",
-
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
-
-                            body: JSON.stringify({
-
-                                title: title,
-
-                                content: content,
-
-                                tag: "",
-
-                                owner_id: 1
-
-                            })
-
-                        }
-                    );
+                    const card =
+                        document.createElement(
+                            "div"
+                        );
 
 
-                if (!response.ok) {
+                    card.className =
+                        "note";
 
-                    throw new Error(
-                        "HTTP " +
-                        response.status
+
+                    card.innerHTML = `
+
+                        <h3>
+                            ${note.title || "No title"}
+                        </h3>
+
+                        <p>
+                            ${note.content || "No content"}
+                        </p>
+
+                        <p>
+                            <strong>Tag:</strong>
+                            ${note.tag || "general"}
+                        </p>
+
+                        <p>
+                            <strong>Owner ID:</strong>
+                            ${note.owner_id}
+                        </p>
+
+                        <p>
+                            <strong>Note ID:</strong>
+                            ${note.id}
+                        </p>
+
+                    `;
+
+
+                    container.appendChild(
+                        card
                     );
 
                 }
+            );
 
 
-                alert(
-                    "Note created successfully!"
-                );
+        }
+        catch (error) {
+
+            console.error(
+                "LOAD ERROR:",
+                error
+            );
 
 
-                document
-                    .getElementById("titleInput")
-                    .value = "";
+            container.innerHTML = `
+
+                <p class="error">
+                    Error loading notes:
+                    ${error.message}
+                </p>
+
+            `;
+
+        }
+
+    }
 
 
-                document
-                    .getElementById("contentInput")
-                    .value = "";
+    // =====================================================
+    // CREATE NOTE
+    // =====================================================
+
+    async function createNote() {
+
+        const title =
+            document
+                .getElementById(
+                    "titleInput"
+                )
+                .value
+                .trim();
 
 
-                loadNotes();
+        const content =
+            document
+                .getElementById(
+                    "contentInput"
+                )
+                .value
+                .trim();
 
 
-            }
-            catch (error) {
+        if (
+            !title ||
+            !content
+        ) {
 
-                alert(
-                    "Create failed: " +
-                    error.message
-                );
+            alert(
+                "Please enter title and content."
+            );
 
-            }
+            return;
 
         }
 
 
-        // =========================
-        // SEARCH
-        // =========================
+        try {
 
-        async function performSearch() {
+            const response =
+                await fetch(
+                    API_URL + "/notes",
+                    {
 
-            const value =
-                document
-                    .getElementById("searchInput")
-                    .value
-                    .trim();
+                        method: "POST",
 
+                        headers: {
 
-            const type =
-                document
-                    .getElementById("searchType")
-                    .value;
+                            "Content-Type":
+                                "application/json"
 
+                        },
 
-            const results =
-                document
-                    .getElementById("searchResults");
+                        body:
+                            JSON.stringify({
 
+                                title:
+                                    title,
 
-            if (!value) {
+                                content:
+                                    content,
 
-                results.innerHTML =
-                    "<p>Please enter something to search.</p>";
+                                tag:
+                                    "",
 
-                return;
+                                owner_id:
+                                    1
 
-            }
-
-
-            let url = "";
-
-
-            if (type === "title") {
-
-                url =
-                    API_URL +
-                    "/search/title?title=" +
-                    encodeURIComponent(value);
-
-            }
-
-
-            else if (type === "tag") {
-
-                url =
-                    API_URL +
-                    "/search/tag?tag=" +
-                    encodeURIComponent(value);
-
-            }
-
-
-            else if (type === "tag-quick") {
-
-                url =
-                    API_URL +
-                    "/search/tag-quick?tag=" +
-                    encodeURIComponent(value);
-
-            }
-
-
-            else if (type === "smart") {
-
-                url =
-                    API_URL +
-                    "/smart-search?query=" +
-                    encodeURIComponent(value);
-
-            }
-
-
-            results.innerHTML =
-                "<p>Searching...</p>";
-
-
-            try {
-
-                const response =
-                    await fetch(url);
-
-
-                if (!response.ok) {
-
-                    throw new Error(
-                        "HTTP " +
-                        response.status
-                    );
-
-                }
-
-
-                const data =
-                    await response.json();
-
-
-                console.log(
-                    "SEARCH RESULT:",
-                    data
-                );
-
-
-                results.innerHTML = "";
-
-
-                if (
-                    !data ||
-                    data.length === 0
-                ) {
-
-                    results.innerHTML =
-                        "<p>No results found.</p>";
-
-                    return;
-
-                }
-
-
-                data.forEach(
-                    function(item) {
-
-                        let note = item;
-
-
-                        if (
-                            type === "smart" &&
-                            item.note
-                        ) {
-
-                            note = item.note;
-
-                        }
-
-
-                        const card =
-                            document.createElement("div");
-
-
-                        card.className =
-                            "note";
-
-
-                        card.innerHTML = `
-
-                            <h3>
-                                ${note.title || "No title"}
-                            </h3>
-
-                            <p>
-                                ${note.content || "No content"}
-                            </p>
-
-                            <p>
-                                <strong>Tag:</strong>
-                                ${note.tag || "general"}
-                            </p>
-
-                            <p>
-                                <strong>Owner ID:</strong>
-                                ${note.owner_id || 1}
-                            </p>
-
-                            <p>
-                                <strong>Note ID:</strong>
-                                ${note.id || ""}
-                            </p>
-
-                        `;
-
-
-                        results.appendChild(
-                            card
-                        );
+                            })
 
                     }
                 );
 
 
-            }
-            catch (error) {
+            if (!response.ok) {
 
-                console.error(
-                    "SEARCH ERROR:",
-                    error
+                throw new Error(
+                    "HTTP " +
+                    response.status
                 );
 
-
-                results.innerHTML = `
-
-                    <p>
-                        <strong>
-                            Search failed:
-                        </strong>
-
-                        ${error.message}
-                    </p>
-
-                `;
-
             }
+
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "CREATED NOTE:",
+                data
+            );
+
+
+            alert(
+                "Note created successfully!"
+            );
+
+
+            document
+                .getElementById(
+                    "titleInput"
+                )
+                .value = "";
+
+
+            document
+                .getElementById(
+                    "contentInput"
+                )
+                .value = "";
+
+
+            loadNotes();
+
+
+        }
+        catch (error) {
+
+            console.error(
+                "CREATE ERROR:",
+                error
+            );
+
+
+            alert(
+                "Create failed: " +
+                error.message
+            );
 
         }
 
-    </script>
+    }
+
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    async function performSearch() {
+
+        const value =
+            document
+                .getElementById(
+                    "searchInput"
+                )
+                .value
+                .trim();
+
+
+        const type =
+            document
+                .getElementById(
+                    "searchType"
+                )
+                .value;
+
+
+        const results =
+            document
+                .getElementById(
+                    "searchResults"
+                );
+
+
+        if (!value) {
+
+            results.innerHTML =
+                "<p>Please enter something to search.</p>";
+
+            return;
+
+        }
+
+
+        let url = "";
+
+
+        // =================================================
+        // TITLE SEARCH
+        // =================================================
+
+        if (type === "title") {
+
+            url =
+                API_URL +
+                "/search/title?title=" +
+                encodeURIComponent(
+                    value
+                );
+
+        }
+
+
+        // =================================================
+        // TAG SEARCH
+        // =================================================
+
+        else if (type === "tag") {
+
+            url =
+                API_URL +
+                "/search/tag?tag=" +
+                encodeURIComponent(
+                    value
+                );
+
+        }
+
+
+        // =================================================
+        // TAG QUICK SEARCH
+        // =================================================
+
+        else if (type === "tag-quick") {
+
+            url =
+                API_URL +
+                "/search/tag-quick?tag=" +
+                encodeURIComponent(
+                    value
+                );
+
+        }
+
+
+        // =================================================
+        // SMART SEARCH
+        // =================================================
+
+        else if (type === "smart") {
+
+            url =
+                API_URL +
+                "/notes/smart-search?q=" +
+                encodeURIComponent(
+                    value
+                );
+
+        }
+
+
+        console.log(
+            "SEARCH URL:",
+            url
+        );
+
+
+        results.innerHTML =
+            "<p>Searching...</p>";
+
+
+        try {
+
+            const response =
+                await fetch(url);
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "HTTP " +
+                    response.status
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "SEARCH RESULT:",
+                data
+            );
+
+
+            results.innerHTML = "";
+
+
+            // =================================================
+            // NORMALIZE RESPONSE
+            // =================================================
+
+            let items;
+
+
+            if (
+                Array.isArray(data)
+            ) {
+
+                items = data;
+
+            }
+            else if (data) {
+
+                items = [data];
+
+            }
+            else {
+
+                items = [];
+
+            }
+
+
+            if (
+                items.length === 0
+            ) {
+
+                results.innerHTML =
+                    "<p>No results found.</p>";
+
+                return;
+
+            }
+
+
+            // =================================================
+            // DISPLAY RESULTS
+            // =================================================
+
+            items.forEach(
+                function(item) {
+
+                    let note =
+                        item;
+
+
+                    // Smart Search response:
+                    //
+                    // {
+                    //     "note": {...},
+                    //     "score": 0.5
+                    // }
+
+                    if (
+                        type === "smart" &&
+                        item.note
+                    ) {
+
+                        note =
+                            item.note;
+
+                    }
+
+
+                    const card =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    card.className =
+                        "note";
+
+
+                    card.innerHTML = `
+
+                        <h3>
+                            ${note.title || "No title"}
+                        </h3>
+
+                        <p>
+                            ${note.content || "No content"}
+                        </p>
+
+                        <p>
+                            <strong>Tag:</strong>
+                            ${note.tag || "general"}
+                        </p>
+
+                        <p>
+                            <strong>Owner ID:</strong>
+                            ${note.owner_id || 1}
+                        </p>
+
+                        <p>
+                            <strong>Note ID:</strong>
+                            ${note.id || ""}
+                        </p>
+
+                    `;
+
+
+                    // =================================================
+                    // SMART SEARCH SCORE
+                    // =================================================
+
+                    if (
+                        type === "smart" &&
+                        item.score !== undefined
+                    ) {
+
+                        const score =
+                            document.createElement(
+                                "p"
+                            );
+
+
+                        score.innerHTML =
+                            `
+                            <strong>
+                                Relevance Score:
+                            </strong>
+                            ${item.score}
+                            `;
+
+
+                        card.appendChild(
+                            score
+                        );
+
+                    }
+
+
+                    results.appendChild(
+                        card
+                    );
+
+                }
+            );
+
+
+        }
+        catch (error) {
+
+            console.error(
+                "SEARCH ERROR:",
+                error
+            );
+
+
+            results.innerHTML = `
+
+                <p class="error">
+
+                    <strong>
+                        Search failed:
+                    </strong>
+
+                    ${error.message}
+
+                </p>
+
+            `;
+
+        }
+
+    }
+
+
+</script>
+
 
 </body>
 
