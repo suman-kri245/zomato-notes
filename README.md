@@ -115,8 +115,7 @@ cd C:\Users\SUNNY\Desktop\zomato-notes
 ### 3. Start the FastAPI backend
 
 ```powershell
-cd backend
-uvicorn main:app --reload
+python -m uvicorn backend.main:app --reload
 ```
 
 The API will run at:
@@ -169,3 +168,4 @@ The project was tested through:
 ## Author
 
 **Suman Kumari**
+
