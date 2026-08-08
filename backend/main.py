@@ -41,21 +41,18 @@ app = FastAPI(title="Zomato Notes API")
 # CORS
 # ============================================================
 
-origins = [
-    "http://127.0.0.1:5500",
-    "http://localhost:5500",
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
 # ============================================================
+
 # PROCESS TIME MIDDLEWARE
 # ============================================================
 
@@ -844,3 +841,11 @@ def user_notes_report(
     db: Session = Depends(get_db),
 ):
     return crud.get_user_notes_report(db)
+
+
+
+
+
+
+
+
