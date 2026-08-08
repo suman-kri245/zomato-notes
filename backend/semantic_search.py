@@ -1,20 +1,6 @@
-
-from sentence_transformers import SentenceTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-
-# ============================================================
-# SEMANTIC SEARCH MODEL
-# ============================================================
-
-model = SentenceTransformer(
-    "sentence-transformers/all-MiniLM-L6-v2"
-)
-
-
-# ============================================================
-# CONVERT NOTE TO TEXT
-# ============================================================
 
 def note_to_text(note):
     title = str(note.get("title") or "")
@@ -24,48 +10,35 @@ def note_to_text(note):
     return f"{title} {content} {tag}".strip()
 
 
-# ============================================================
-# SEMANTIC SEARCH
-# ============================================================
-
 def semantic_search(query, notes, top_k=5):
-
     query = str(query or "").strip()
 
-    if not query:
+    if not query or not notes:
         return []
 
-    if not notes:
-        return []
-
-    note_texts = []
     valid_notes = []
+    note_texts = []
 
     for note in notes:
-
-        if not isinstance(note, dict):
-            continue
-
         text = note_to_text(note)
 
-        if not text:
-            continue
-
-        note_texts.append(text)
-        valid_notes.append(note)
+        if text:
+            valid_notes.append(note)
+            note_texts.append(text)
 
     if not valid_notes:
         return []
 
-    query_embedding = model.encode(
-        [query],
-        convert_to_numpy=True
+    vectorizer = TfidfVectorizer(
+        lowercase=True,
+        stop_words="english"
     )
 
-    note_embeddings = model.encode(
-        note_texts,
-        convert_to_numpy=True
-    )
+    try:
+        note_embeddings = vectorizer.fit_transform(note_texts)
+        query_embedding = vectorizer.transform([query])
+    except ValueError:
+        return []
 
     similarities = cosine_similarity(
         query_embedding,
@@ -75,7 +48,6 @@ def semantic_search(query, notes, top_k=5):
     results = []
 
     for index, note in enumerate(valid_notes):
-
         result = note.copy()
 
         result["similarity_score"] = float(
@@ -90,4 +62,3 @@ def semantic_search(query, notes, top_k=5):
     )
 
     return results[:top_k]
-

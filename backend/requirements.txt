@@ -2,9 +2,7 @@ email-validator==2.3.0
 python-multipart==0.0.32
 python-dotenv==1.2.2
 
-sentence-transformers==3.0.0
 scikit-learn
-torch
 
 google-generativeai
 
