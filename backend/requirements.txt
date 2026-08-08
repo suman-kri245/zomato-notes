@@ -9,3 +9,5 @@ torch
 google-generativeai
 
 uvicorn
+
+fastapi
