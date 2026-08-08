@@ -155,22 +155,17 @@ def binary_search_title(
     sorted_notes,
     title,
 ):
-    titles = [
-        note.get("title") or ""
-        for note in sorted_notes
-    ]
+    query = (title or "").strip().lower()
 
-    index = binary_search_iterative(
-        titles,
-        title,
-    )
+    for note in sorted_notes:
+        note_title = (note.get("title") or "").strip().lower()
 
-    if index == -1:
-        return {
-            "message": "Note not found"
-        }
+        if query in note_title:
+            return note
 
-    return sorted_notes[index]
+    return {
+        "message": "Note not found"
+    }
 
 
 def binary_search_tag(sorted_notes, tag):
@@ -190,3 +185,4 @@ def binary_search_tag(sorted_notes, tag):
     return {
         'message': 'No note found for this tag'
     }
+
