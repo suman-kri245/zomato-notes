@@ -173,39 +173,20 @@ def binary_search_title(
     return sorted_notes[index]
 
 
-def binary_search_tag(
-    sorted_notes,
-    tag,
-):
-    tag = (
-        tag or ""
-    ).strip().lower()
+def binary_search_tag(sorted_notes, tag):
+    tag = str(tag or '').strip().lower()
 
-    left = 0
-    right = len(sorted_notes) - 1
+    results = []
 
-    while left <= right:
-        middle = (left + right) // 2
+    for note in sorted_notes:
+        note_tag = str(note.get('tag') or '').strip().lower()
 
-        middle_tag = (
-            sorted_notes[middle].get("tag")
-            or ""
-        )
+        if note_tag == tag:
+            results.append(note)
 
-        middle_tag = (
-            str(middle_tag)
-            .strip()
-            .lower()
-        )
-
-        if middle_tag == tag:
-            return sorted_notes[middle]
-
-        if middle_tag < tag:
-            left = middle + 1
-        else:
-            right = middle - 1
+    if results:
+        return results
 
     return {
-        "message": "No note found for this tag"
+        'message': 'No note found for this tag'
     }
