@@ -140,6 +140,11 @@ The frontend normally runs at:
 http://127.0.0.1:5500
 ```
 
+## Live Deployment
+
+- **Frontend:** https://zomato-notes-frontend.onrender.com
+- **Backend API:** https://zomato-notes-api.onrender.com
+- **Swagger API Docs:** https://zomato-notes-api.onrender.com/docs
 ## Environment Variables
 
 Create a `.env` file and configure the required API key:
@@ -168,4 +173,5 @@ The project was tested through:
 ## Author
 
 **Suman Kumari**
+
 
